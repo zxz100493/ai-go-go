@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -23,29 +24,14 @@ func RequestApi() string {
 	url := "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions_pro?access_token=" + GetAccessToken()
 
 	question := `{"messages":[{"role":"user","content":"` + msg + `"}]}`
-	payload := strings.NewReader(question)
-	client := &http.Client{}
-	req, err := http.NewRequest("POST", url, payload)
-
+	headers := map[string]string{"Content-Type": "application/json"}
+	response, err := makeRequest(url, "POST", headers, strings.NewReader(question))
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	req.Header.Add("Content-Type", "application/json")
 
-	res, err := client.Do(req)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	return string(body)
+	return response
 }
 
 /**
@@ -55,18 +41,40 @@ func RequestApi() string {
 func GetAccessToken() string {
 	url := "https://aip.baidubce.com/oauth/2.0/token"
 	postData := fmt.Sprintf("grant_type=client_credentials&client_id=%s&client_secret=%s", ApiKey, ApiSecret)
-	resp, err := http.Post(url, "application/x-www-form-urlencoded", strings.NewReader(postData))
+	headers := map[string]string{"Content-Type": "application/x-www-form-urlencoded"}
+
+	response, err := makeRequest(url, "POST", headers, strings.NewReader(postData))
 	if err != nil {
 		fmt.Println(err)
 		return ""
 	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err)
-		return ""
-	}
+
 	accessTokenObj := map[string]string{}
-	json.Unmarshal([]byte(body), &accessTokenObj)
+	json.Unmarshal([]byte(response), &accessTokenObj)
 	return accessTokenObj["access_token"]
+}
+
+func makeRequest(url, method string, headers map[string]string, body io.Reader) (string, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return "", err
+	}
+
+	for key, value := range headers {
+		req.Header.Add(key, value)
+	}
+
+	res, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer res.Body.Close()
+
+	resBody, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(resBody), nil
 }
