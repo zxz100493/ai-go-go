@@ -1,4 +1,4 @@
-package main
+package baidu
 
 type ChatCompletion struct {
 	ID               string `json:"id"`

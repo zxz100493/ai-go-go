@@ -1,43 +1,46 @@
 package main
 
 import (
-	"encoding/json"
+	"ai-taik/ai"
+	"ai-taik/ai/baidu"
+	"ai-taik/ai/xunfei"
 	"flag"
 	"fmt"
 	"os"
 )
 
 var msg string
+var s string
 
 func main() {
 	readMsg()
-	res := RequestApi()
-	parseResult(res)
+	var chat ai.AiChat
+	if s == "baidu" {
+		var a = baidu.Baidu{}
+		chat = a
+	} else {
+		var a = xunfei.Xunfei{}
+		chat = a
+	}
+	res := chat.Chat(msg)
+	chat.ParseResult(res)
 }
 
 func readMsg() string {
 	flag.StringVar(&msg, "m", "", "message")
+	flag.StringVar(&s, "s", "", "server")
 	flag.Parse()
+
 	if msg == "" {
 		fmt.Println("请先输入您的问题")
 		os.Exit(1)
 	}
-	fmt.Println("您的问题是:", msg)
-	return msg
-}
 
-func parseResult(jsonStr string) {
-	var chatCompletion ChatCompletion
-	err := json.Unmarshal([]byte(jsonStr), &chatCompletion)
-	if err != nil {
-		fmt.Println("解析 JSON 失败:", err)
-		return
+	fmt.Println("您的问题是:", msg)
+
+	if s == "" {
+		s = "baidu"
 	}
-	/* jsonData, err := json.MarshalIndent(chatCompletion, "", "  ")
-	if err != nil {
-		fmt.Println("JSON encoding error:", err)
-		return
-	}
-	fmt.Println(string(jsonData)) */
-	fmt.Println("Ai:", string(chatCompletion.Result))
+
+	return msg
 }

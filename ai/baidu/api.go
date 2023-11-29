@@ -1,4 +1,4 @@
-package main
+package baidu
 
 import (
 	"encoding/json"
@@ -15,12 +15,15 @@ var (
 	ApiSecret string
 )
 
+type Baidu struct {
+}
+
 func init() {
 	ApiKey = os.Getenv("BAIDU_CHAT_AI_API_KEY")
 	ApiSecret = os.Getenv("BAIDU_CHAT_AI_SECRET_KEY")
 }
 
-func RequestApi() string {
+func (b Baidu) Chat(msg string) string {
 	url := "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions_pro?access_token=" + GetAccessToken()
 
 	question := `{"messages":[{"role":"user","content":"` + msg + `"}]}`
